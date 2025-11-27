@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Simulación Control de Nivel de Tanque</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial; background:#f6f6f6; padding:20px; display:flex; flex-direction:row; gap:20px; }
+.left-panel { width:35%; display:flex; flex-direction:column; align-items:center; }
+.right-panel { width:65%; display:flex; flex-direction:column; }
+canvas { background:white; margin-bottom:20px; border-radius:8px; }
+.panel { background:#fff; padding:15px; border-radius:8px; margin-bottom:20px; }
+#tanqueCanvas { background:#e0e0e0; border-radius:8px; }
+span.def { margin-left:5px;color:gray;font-size:0.9em; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Tanque</h2>
+  <canvas id="tanqueCanvas" width="200" height="400"></canvas>
+  <div class="panel">
+    <h3>Parámetros variables del Sistema</h3>
+    <label>Diámetro del tanque (cm):</label>
+    <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
+    <label>Altura deseada (cm):</label>
+    <input type="number" id="inputRef" value="89.47" min="0" max="89.47"><span class="def">(89.47)</span><br><br>
+    <label>Amplitud perturbación (L/s):</label>
+    <input type="number" id="inputAmp" value="0" step="0.01"><span class="def">(0)</span><br><br>
+    <label>Duración perturbación (s):</label>
+    <input type="number" id="inputDur" value="0" step="1"><span class="def">(0)</span><br><br>
+    <label>Factor de tiempo:</label>
+    <input type="number" id="inputTimeFactor" value="5" step="0.1"><span class="def">(5)</span><br><br>
+    <label>Largo del cable (cm):</label>
+    <input type="number" id="inputCable" value="5" step="0.1"><span class="def">(5)</span><br><br>
+    <h3>Parámetros no variables del sistema</h3>
+    <label>Altura total del tanque (cm):</label>
+    <input type="number" id="inputAltura" value="94.74" step="1"><span class="def">(94.74)</span><br><br>
+    <label>Caudal bomba (L/min):</label>
+    <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
+    <label>Histeresis (cm):</label>
+    <input type="number" id="inputHisteresis" value="5" step="1"><span class="def">(5)</span><br><br>
+    <label>Constante sensor (°/cm):</label>
+    <input type="number" id="inputK" value="0.18" step="0.01"><span class="def">(0.18)</span><br><br>
+    <button onclick="aplicarParametros()">Aplicar Parámetros</button>
+    <button onclick="togglePausa()">⏸ Pausar</button>
+    <button onclick="resetSimulacion()" style="background:#d9534f;color:white;">🔄 Reset</button>
+  </div>
+</div>
+
+<div class="right-panel">
+  <h2>Gráficos</h2>
+  <canvas id="chartRef" height="180"></canvas>
+  <canvas id="chartPert" height="250"></canvas>
+  <canvas id="chartErr" height="250"></canvas>
+  <canvas id="chartNivel" height="180"></canvas>
+</div>
+
+<script>
+// ------------------------
+// VARIABLES
+let diametro=110, alturaTotal=94.74, referencia=89.47, amplitudPert=0, duracionPert=0;
+let factorTiempo=5, k_sensor=0.18, L_cable=5, histeresis=5, Q_in=92;
+let nivel=0, bomba=0, dt=1, tiempo=0, tiempoInicioPert=null;
+let A=Math.PI*Math.pow(diametro/2,2), nivel_min=0, nivel_max=0;
+let labels=[], refData=[], pertData=[], errData=[], nivelData=[], enPausa=false;
+
+// ------------------------
+// CONVERSIONES
+function Q_Lpm_a_cms(Q){ return Q*1000/60; }
+function Q_Lps_a_cms(Q){ return Q*1000; }
+
+// ------------------------
+// BLOQUES DE CONTROL
+function obtenerReferencia(){ return referencia*k_sensor; }
+function medirNivel(){ return nivel*k_sensor; }
+function puntoSuma(ref,med){ return ref-med; }
+function controladorONOFF(nivelPorc){
+  if(nivelPorc<=nivel_min) return 1;
+  if(nivelPorc>=nivel_max) return 0;
+  return bomba;
+}
+function actuarBomba(estado){ return estado*Q_Lpm_a_cms(Q_in); }
+function perturbacionActual(){
+  if(tiempoInicioPert!==null && tiempo-tiempoInicioPert<=duracionPert){
+    return Q_Lps_a_cms(amplitudPert); 
+  }
+  return 0;
+}
+function actualizarNivel(Qb,Qp,dt){ nivel+= (Qb-Qp)*dt/A; nivel=Math.min(Math.max(nivel,0),alturaTotal); }
+
+// ------------------------
+function aplicarParametros(){
+  diametro=parseFloat(document.getElementById("inputDiam").value);
+  alturaTotal=parseFloat(document.getElementById("inputAltura").value);
+  referencia=parseFloat(document.getElementById("inputRef").value);
+  amplitudPert=parseFloat(document.getElementById("inputAmp").value);
+  duracionPert=parseFloat(document.getElementById("inputDur").value);
+  factorTiempo=parseFloat(document.getElementById("inputTimeFactor").value);
+  L_cable=parseFloat(document.getElementById("inputCable").value);
+  Q_in=parseFloat(document.getElementById("inputQin").value);
+  histeresis=parseFloat(document.getElementById("inputHisteresis").value);
+  let k=parseFloat(document.getElementById("inputK").value);
+  if(!isNaN(k)) k_sensor=k;
+
+  A=Math.PI*Math.pow(diametro/2,2);
+  let hisPorc=(histeresis/alturaTotal)*100;
+  nivel_min=(referencia/alturaTotal*100)-hisPorc/2;
+  nivel_max=(referencia/alturaTotal*100)+hisPorc/2;
+  tiempoInicioPert=tiempo;
+}
+
+// ------------------------
+function togglePausa(){ enPausa=!enPausa; document.querySelector("button[onclick='togglePausa()']").textContent=enPausa?"▶ Reanudar":"⏸ Pausar"; }
+function resetSimulacion(){ nivel=0; tiempo=0; tiempoInicioPert=null; labels.length=refData.length=pertData.length=errData.length=nivelData.length=0; actualizarGraficos(); }
+
+// ------------------------
+// GRAFICOS
+const chartRef=new Chart(document.getElementById("chartRef").getContext("2d"),{
+  type:'line', data:{labels:labels,datasets:[{label:"Referencia (°)",data:refData,borderColor:"blue",borderWidth:2,fill:false,pointRadius:0}]},
+  options:{animation:false,scales:{y:{beginAtZero:true,max:alturaTotal*k_sensor*1.1,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+});
+const chartPert=new Chart(document.getElementById("chartPert").getContext("2d"),{
+  type:'line', data:{labels:labels,datasets:[{label:"Perturbación (L/s)",data:pertData,borderColor:"orange",borderWidth:2,fill:false,pointRadius:0}]},
+  options:{animation:false,scales:{y:{beginAtZero:true,max:1,title:{display:true,text:"L/s"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+});
+const chartErr=new Chart(document.getElementById("chartErr").getContext("2d"),{
+  type:'line', data:{labels:labels,datasets:[{label:"Error (°)",data:errData,borderColor:"red",borderWidth:2,fill:false,pointRadius:0}]},
+  options:{animation:false,scales:{y:{beginAtZero:false,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+});
+const chartNivel=new Chart(document.getElementById("chartNivel").getContext("2d"),{
+  type:'line', data:{labels:labels,datasets:[
+    {label:"Nivel (%)",data:nivelData,borderColor:"green",borderWidth:2,fill:false,pointRadius:0},
+    {label:"Umbral ON/OFF (%)",data:[],borderColor:"red",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}
+  ]},
+  options:{animation:false,scales:{y:{beginAtZero:true,max:100,title:{display:true,text:"%"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+});
+
+// ------------------------
+function actualizarGraficos(){
+  chartRef.data.datasets[0].data=refData;
+  chartPert.data.datasets[0].data=pertData;
+  chartErr.data.datasets[0].data=errData;
+  chartNivel.data.datasets[0].data=nivelData;
+  chartNivel.data.datasets[1].data=Array(nivelData.length).fill(nivel_min);
+
+  // Ajuste escalas dinámicas
+  let maxPert=Math.max(...pertData,1)*1.2;
+  chartPert.options.scales.y.max=Math.max(maxPert,1);
+  let maxErr=Math.max(...errData.map(e=>Math.abs(e)),1)*1.2;
+  chartErr.options.scales.y.max=maxErr;
+  chartErr.options.scales.y.min=-maxErr;
+
+  chartRef.update(); chartPert.update(); chartErr.update(); chartNivel.update();
+}
+
+// ------------------------
+// ANIMACION TANQUE
+const canvasTanque=document.getElementById("tanqueCanvas");
+const ctxTanque=canvasTanque.getContext("2d");
+function dibujarTanque(){
+  ctxTanque.clearRect(0,0,canvasTanque.width,canvasTanque.height);
+  ctxTanque.strokeStyle="#000"; ctxTanque.lineWidth=3;
+  ctxTanque.strokeRect(50,20,100,360);
+
+  let nivelPx=(nivel/alturaTotal)*360;
+  ctxTanque.fillStyle="#0077be";
+  ctxTanque.fillRect(50,380-nivelPx,100,nivelPx);
+
+  let umbralPx=(referencia/alturaTotal)*360;
+  ctxTanque.strokeStyle="red"; ctxTanque.lineWidth=2;
+  ctxTanque.beginPath();
+  ctxTanque.moveTo(50,380-umbralPx); ctxTanque.lineTo(150,380-umbralPx); ctxTanque.stroke();
+  ctxTanque.fillStyle="red"; ctxTanque.font="14px Arial"; ctxTanque.fillText("Umbral/Ref",160,380-umbralPx+5);
+
+  ctxTanque.fillStyle=bomba?"limegreen":"gray";
+  ctxTanque.beginPath(); ctxTanque.arc(100,410,10,0,2*Math.PI); ctxTanque.fill();
+  ctxTanque.strokeStyle="#000"; ctxTanque.stroke();
+
+  ctxTanque.fillStyle="#000"; ctxTanque.font="14px Arial"; ctxTanque.fillText("Altura total: "+alturaTotal+" cm",50,15);
+}
+
+// ------------------------
+// BUCLE SIMULACION
+function simular(){
+  if(enPausa) return;
+
+  let dt_eff = dt * factorTiempo;
+  tiempo += dt_eff;
+
+  let angActual = medirNivel();
+  let error = puntoSuma(obtenerReferencia(), angActual);
+
+  let nivelPorc = angActual / (k_sensor * alturaTotal) * 100;
+  bomba = controladorONOFF(nivelPorc);
+
+  let Q_bomba = actuarBomba(bomba);
+  let Q_pert = perturbacionActual();
+  actualizarNivel(Q_bomba, Q_pert, dt_eff);
+
+  labels.push(tiempo.toFixed(1));
+  refData.push(obtenerReferencia());
+  pertData.push(Q_pert*1000); // L/s en gráfico
+  errData.push(error);
+  nivelData.push(nivelPorc);
+
+  actualizarGraficos();
+  dibujarTanque();
+}
+
+setInterval(simular,100);
+</script>
+</body>
+</html>
