@@ -60,7 +60,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
 let diametro=110, alturaTotal=94.74, referencia=89.47, amplitudPert=0, duracionPert=0;
 let factorTiempo=1, k_sensor=0.18, L_cable=5, histeresis=5, Q_in=92;
 let nivel=0, bomba=0, dt=1, tiempo=0, tiempoInicioPert=null;
-let A=Math.PI*Math.pow(diametro/2,2), nivel_min=0, nivel_max=0;
+let A=Math.PI*Math.pow(diametro/2,2), ang_min=0, ang_max=0;
 let labels=[], refData=[], pertData=[], errData=[], nivelData=[], enPausa=false;
 
 // ------------------------
@@ -70,12 +70,31 @@ function Q_Lps_a_cms(Q){ return Q*1000; }
 
 // ------------------------
 // BLOQUES DE CONTROL
-function obtenerReferencia(){ return referencia*k_sensor; }
-function medirNivel(){ return nivel*k_sensor; }
+// function obtenerReferencia(){ return referencia*k_sensor; }
+function obtenerReferencia(){ return 0; }
+// function medirNivel(){ return nivel*k_sensor; }
+function medirNivel(){
+  let alturaFlotanteLow = referencia-L_cable;
+  let alturaFlotanteHigh = referencia+L_cable;
+  if (nivel < alturaFlotanteLow){
+    return 90;
+  } else if (nivel >= alturaFlotanteLow && nivel <= alturaFlotanteHigh) {
+    let cateto = nivel-referencia;
+    let sin = cateto / L_cable;
+    let anguloRadianes = Math.asin(sin);
+  
+    // Convertimos el ángulo a grados
+    let anguloGrados = anguloRadianes * (180 / Math.PI);
+
+    return -anguloGrados;
+  } else {
+    return -90;
+  }
+}
 function puntoSuma(ref,med){ return ref-med; }
-function controladorONOFF(nivelPorc){
-  if(nivelPorc<=nivel_min) return 1;
-  if(nivelPorc>=nivel_max) return 0;
+function controladorONOFF(angError){
+  if(angError<=ang_min) return 1;
+  if(angError>=ang_max) return 0;
   return bomba;
 }
 function actuarBomba(estado){ return estado*Q_Lpm_a_cms(Q_in); }
@@ -85,7 +104,10 @@ function perturbacionActual(){
   }
   return 0;
 }
-function actualizarNivel(Qb,Qp,dt){ nivel+= (Qb-Qp)*dt/A; nivel=Math.min(Math.max(nivel,0),alturaTotal); }
+function actualizarNivel(Qb,Qp,dt){ 
+  nivel+= (Qb-Qp)*dt/A; 
+  nivel=Math.min(Math.max(nivel,0),alturaTotal); 
+}
 
 // ------------------------
 function aplicarParametros(){
@@ -101,9 +123,11 @@ function aplicarParametros(){
   if(!isNaN(k)) k_sensor=k;
 
   A=Math.PI*Math.pow(diametro/2,2);
-  let hisPorc=(histeresis/alturaTotal)*100;
-  nivel_min=(referencia/alturaTotal*100)-hisPorc/2;
-  nivel_max=(referencia/alturaTotal*100)+hisPorc/2;
+  // let hisPorc=(histeresis/alturaTotal)*100;
+  // ang_min=-hisPorc/2;
+  // ang_max=hisPorc/2;
+  ang_min=-10;
+  ang_max=10;
   tiempoInicioPert=tiempo;
 }
 
@@ -139,7 +163,7 @@ function actualizarGraficos(){
   chartPert.data.datasets[0].data=pertData;
   chartErr.data.datasets[0].data=errData;
   chartNivel.data.datasets[0].data=nivelData;
-  chartNivel.data.datasets[1].data=Array(nivelData.length).fill(nivel_min);
+  chartNivel.data.datasets[1].data=Array(nivelData.length).fill(ang_min);
 
   // Ajuste escalas dinámicas
   let maxPert=Math.max(...pertData,1)*1.2;
@@ -188,8 +212,8 @@ function simular(){
   let angActual = medirNivel();
   let error = puntoSuma(obtenerReferencia(), angActual);
 
-  let nivelPorc = angActual / (k_sensor * alturaTotal) * 100;
-  bomba = controladorONOFF(nivelPorc);
+  let nivelPorc = nivel / referencia * 100;
+  bomba = controladorONOFF(error);
 
   let Q_bomba = actuarBomba(bomba);
   let Q_pert = perturbacionActual();
