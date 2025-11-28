@@ -36,6 +36,8 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
     <label>Caudal bomba (L/min):</label>
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
+    <label>Margen de Error Angular (°):</label>
+    <input type="number" id="inputAngVar" value="10" step="1"><span class="def">(+/-10)</span><br><br>
     
     <label>Velocidad simulación:</label><br>
     <button id="btn-x1" onclick="setFactorTiempo(1)">x1</button>
@@ -135,13 +137,12 @@ function aplicarParametros(){
   duracionPert=parseFloat(document.getElementById("inputDur").value);
   L_cable=parseFloat(document.getElementById("inputCable").value);
   Q_in=parseFloat(document.getElementById("inputQin").value);
+  let margenAngular = parseFloat(document.getElementById("inputAngVar").value);
 
   A=Math.PI*Math.pow(diametro/2,2);
-  // let hisPorc=(histeresis/alturaTotal)*100;
-  // ang_min=-hisPorc/2;
-  // ang_max=hisPorc/2;
-  ang_min=-10;
-  ang_max=10;
+
+  ang_min=-margenAngular;
+  ang_max=margenAngular;
   tiempoInicioPert=tiempo;
 }
 
