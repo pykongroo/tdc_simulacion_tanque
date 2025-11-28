@@ -47,7 +47,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
   <canvas id="chartRef" height="180"></canvas>
   <canvas id="chartPert" height="250"></canvas>
   <canvas id="chartErr" height="250"></canvas>
-  <canvas id="chartNivel" height="180"></canvas>
+  <canvas id="chartNivel" height="250"></canvas>
 </div>
 
 <script>
@@ -143,14 +143,15 @@ const chartPert=new Chart(document.getElementById("chartPert").getContext("2d"),
 });
 const chartErr=new Chart(document.getElementById("chartErr").getContext("2d"),{
   type:'line', data:{labels:labels,datasets:[{label:"Error (°)",data:errData,borderColor:"red",borderWidth:2,fill:false,pointRadius:0}]},
-  options:{animation:false,scales:{y:{beginAtZero:false,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+  options:{animation:false,scales:{y:{beginAtZero:false, max: 100, min: -100,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 const chartNivel=new Chart(document.getElementById("chartNivel").getContext("2d"),{
   type:'line', data:{labels:labels,datasets:[
     {label:"Nivel (cm)",data:nivelData,borderColor:"green",borderWidth:2,fill:false,pointRadius:0},
-    {label:"Altura objetivo (cm)",data:[],borderColor:"red",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}
+    {label:"Altura objetivo (cm)",data:[],borderColor:"red",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0},
+    {label:"Altura máxima (cm)",data:[],borderColor:"orange",borderWidth:2,fill:false,pointRadius:0}
   ]},
-  options:{animation:false,scales:{y:{beginAtZero:true,max:100,title:{display:true,text:"Nivel (cm)"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+  options:{animation:false,scales:{y:{beginAtZero:true,max:alturaTotal*1.1,title:{display:true,text:"Nivel (cm)"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 
 // ------------------------
@@ -161,6 +162,7 @@ function actualizarGraficos(){
   chartErr.data.datasets[0].data=errData;
   chartNivel.data.datasets[0].data=nivelData;
   chartNivel.data.datasets[1].data=Array(nivelData.length).fill(referencia);
+  chartNivel.data.datasets[2].data=Array(nivelData.length).fill(alturaTotal);
 
   // Ajuste escalas dinámicas
   let maxPert=Math.max(...pertData,1)*1.2;
