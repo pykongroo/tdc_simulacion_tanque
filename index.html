@@ -56,7 +56,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
 let diametro=110, alturaTotal=94.74, referencia=89.47, amplitudPert=0, duracionPert=0;
 let factorTiempo=1, L_cable=5, Q_in=92;
 let nivel=0, bomba=0, dt=1, tiempo=0, tiempoInicioPert=null;
-let A=Math.PI*Math.pow(diametro/2,2), ang_min=0, ang_max=0;
+let A=Math.PI*Math.pow(diametro/2,2), ang_min=-10, ang_max=10;
 let labels=[], refData=[], pertData=[], errData=[], nivelData=[], enPausa=false;
 
 // ------------------------
@@ -142,7 +142,11 @@ const chartPert=new Chart(document.getElementById("chartPert").getContext("2d"),
   options:{animation:false,scales:{y:{beginAtZero:true,max:1,title:{display:true,text:"L/s"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 const chartErr=new Chart(document.getElementById("chartErr").getContext("2d"),{
-  type:'line', data:{labels:labels,datasets:[{label:"Error (°)",data:errData,borderColor:"red",borderWidth:2,fill:false,pointRadius:0}]},
+  type:'line', data:{labels:labels,datasets:[
+    {label:"Error (°)",data:errData,borderColor:"red",borderWidth:2,fill:false,pointRadius:0},
+    {label:"Error máximo (°)",data:errData,borderColor:"orange",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0},
+    {label:"Error mínimo (°)",data:errData,borderColor:"orange",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}
+  ]},
   options:{animation:false,scales:{y:{beginAtZero:false, max: 100, min: -100,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 const chartNivel=new Chart(document.getElementById("chartNivel").getContext("2d"),{
@@ -160,6 +164,8 @@ function actualizarGraficos(){
   chartRef.data.datasets[1].data=Array(refData.length).fill(alturaTotal);
   chartPert.data.datasets[0].data=pertData;
   chartErr.data.datasets[0].data=errData;
+  chartErr.data.datasets[1].data=Array(errData.length).fill(ang_max);
+  chartErr.data.datasets[2].data=Array(errData.length).fill(ang_min);
   chartNivel.data.datasets[0].data=nivelData;
   chartNivel.data.datasets[1].data=Array(nivelData.length).fill(referencia);
   chartNivel.data.datasets[2].data=Array(nivelData.length).fill(alturaTotal);
