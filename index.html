@@ -41,17 +41,17 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
     <label>Margen de Error Angular (°):</label>
     <input type="number" id="inputAngVar" value="10" step="1"><span class="def">(+/-10)</span><br><br>
-    <button onclick="aplicarParametros('noVariables')">Aplicar Variables</button>
+    <button onclick="aplicarParametros('noVariables')">Aplicar Variables</button><br><br>
+
+    <button onclick="aplicarParametros()">Aplicar Parámetros</button>
+    <button onclick="togglePausa()">⏸ Pausar</button>
+    <button onclick="resetSimulacion()" style="background:#d9534f;color:white;">🔄 Reset</button> <br><br>
     
     <label>Velocidad simulación:</label><br>
     <button id="btn-x1" onclick="setFactorTiempo(1)">x1</button>
     <button id="btn-x10" onclick="setFactorTiempo(10)">x10</button>
     <button id="btn-x20" onclick="setFactorTiempo(20)" class="selected">x20</button>  <!-- Por defecto en x20 -->
     <button id="btn-x50" onclick="setFactorTiempo(50)">x50</button><br><br>
-
-    <button onclick="aplicarParametros()">Aplicar Parámetros</button>
-    <button onclick="togglePausa()">⏸ Pausar</button>
-    <button onclick="resetSimulacion()" style="background:#d9534f;color:white;">🔄 Reset</button>
   </div>
 </div>
 
