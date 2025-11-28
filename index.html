@@ -36,6 +36,13 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
     <label>Caudal bomba (L/min):</label>
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
+    
+    <label>Velocidad simulación:</label><br>
+    <button id="btn-x1" onclick="setFactorTiempo(1)">x1</button>
+    <button id="btn-x10" onclick="setFactorTiempo(10)">x10</button>
+    <button id="btn-x20" onclick="setFactorTiempo(20)" class="selected">x20</button>  <!-- Por defecto en x20 -->
+    <button id="btn-x50" onclick="setFactorTiempo(50)">x50</button><br><br>
+
     <button onclick="aplicarParametros()">Aplicar Parámetros</button>
     <button onclick="togglePausa()">⏸ Pausar</button>
     <button onclick="resetSimulacion()" style="background:#d9534f;color:white;">🔄 Reset</button>
@@ -64,6 +71,20 @@ let labels=[], refData=[], pertData=[], errData=[], nivelData=[], enPausa=false;
 function Q_Lpm_a_cms(Q){ return Q*1000/60; }
 function Q_Lps_a_cms(Q){ return Q*1000; }
 
+// Factor de tiempo de simulacion
+function setFactorTiempo(valor) {
+  factorTiempo = valor;
+
+  // Resaltar el botón seleccionado
+  document.querySelectorAll("button").forEach(button => {
+    button.classList.remove("selected");
+  });
+  document.getElementById("btn-x" + valor).classList.add("selected");
+
+  console.log("Velocidad de simulación ajustada a x" + valor);
+  actualizarIntervalo()
+}
+
 // ------------------------
 // BLOQUES DE CONTROL
 // function obtenerReferencia(){ return referencia*k_sensor; }
@@ -74,7 +95,7 @@ function medirNivel(){
   let alturaFlotanteHigh = referencia+L_cable;
   if (nivel < alturaFlotanteLow){
     return 90;
-  } else if (nivel >= alturaFlotanteLow && nivel <= alturaFlotanteHigh) {
+  } else if (nivel > alturaFlotanteLow && nivel < alturaFlotanteHigh) {
     let cateto = nivel-referencia;
     let sin = cateto / L_cable;
     let anguloRadianes = Math.asin(sin);
@@ -211,7 +232,7 @@ function dibujarTanque(){
 function simular(){
   if(enPausa) return;
 
-  let dt_eff = dt * factorTiempo;
+  let dt_eff = dt * 1; //factor de tiempo escalado, se lo tiene ajustado en 1 para evitar problemas de sincronizacion
   tiempo += dt_eff;
 
   let angActual = medirNivel();
@@ -233,7 +254,23 @@ function simular(){
   dibujarTanque();
 }
 
-setInterval(simular,50);
+// setInterval(simular,1000/factorTiempo);
+function actualizarIntervalo() {
+  // Obtener el valor del nuevo intervalo
+  const nuevoIntervalo = 1000/factorTiempo;
+
+  // Detener el intervalo actual
+  if (intervaloId) {
+    clearInterval(intervaloId);
+  }
+
+  // Iniciar el intervalo con el nuevo tiempo
+  intervaloId = setInterval(simular, nuevoIntervalo);
+  console.log("Nuevo intervalo de simulación ajustado a " + nuevoIntervalo + " ms");
+}
+
+// Iniciar el intervalo por defecto (con el valor inicial)
+intervaloId = setInterval(simular, 50);
 </script>
 </body>
 </html>
