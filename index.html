@@ -23,12 +23,15 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <h3>Parámetros variables del Sistema</h3>
     <label>Altura deseada (cm):</label>
     <input type="number" id="inputRef" value="89.47" min="0" max="89.47"><span class="def">(89.47)</span><br><br>
+    <label>Largo del cable (cm):</label>
+    <input type="number" id="inputCable" value="5" step="0.1"><span class="def">(5)</span><br><br>
+    <button onclick="aplicarParametros('variables')">Aplicar Variables</button>
+    <h3>Parámetros de perturbación</h3>
     <label>Amplitud perturbación (L/s):</label>
     <input type="number" id="inputAmp" value="0" step="0.01"><span class="def">(0)</span><br><br>
     <label>Duración perturbación (s):</label>
     <input type="number" id="inputDur" value="0" step="1"><span class="def">(0)</span><br><br>
-    <label>Largo del cable (cm):</label>
-    <input type="number" id="inputCable" value="5" step="0.1"><span class="def">(5)</span><br><br>
+    <button onclick="aplicarParametros('perturbacion')">Aplicar Variables</button>
     <h3>Parámetros no variables del sistema</h3>
     <label>Altura total del tanque (cm):</label>
     <input type="number" id="inputAltura" value="94.74" step="1"><span class="def">(94.74)</span><br><br>
@@ -38,6 +41,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
     <label>Margen de Error Angular (°):</label>
     <input type="number" id="inputAngVar" value="10" step="1"><span class="def">(+/-10)</span><br><br>
+    <button onclick="aplicarParametros('noVariables')">Aplicar Variables</button>
     
     <label>Velocidad simulación:</label><br>
     <button id="btn-x1" onclick="setFactorTiempo(1)">x1</button>
@@ -129,20 +133,26 @@ function actualizarNivel(Qb,Qp,dt){
 }
 
 // ------------------------
-function aplicarParametros(){
-  diametro=parseFloat(document.getElementById("inputDiam").value);
-  alturaTotal=parseFloat(document.getElementById("inputAltura").value);
-  referencia=parseFloat(document.getElementById("inputRef").value);
-  amplitudPert=parseFloat(document.getElementById("inputAmp").value);
-  duracionPert=parseFloat(document.getElementById("inputDur").value);
-  L_cable=parseFloat(document.getElementById("inputCable").value);
-  Q_in=parseFloat(document.getElementById("inputQin").value);
-  let margenAngular = parseFloat(document.getElementById("inputAngVar").value);
+function aplicarParametros(tipo){
+  if (tipo == "variables"){
+    referencia=parseFloat(document.getElementById("inputRef").value);
+    L_cable=parseFloat(document.getElementById("inputCable").value);
+  } else if (tipo == "perturbacion"){
+    amplitudPert=parseFloat(document.getElementById("inputAmp").value);
+    duracionPert=parseFloat(document.getElementById("inputDur").value);
+  } else {
+    diametro=parseFloat(document.getElementById("inputDiam").value);
+    alturaTotal=parseFloat(document.getElementById("inputAltura").value);
+    referencia=parseFloat(document.getElementById("inputRef").value);
+    L_cable=parseFloat(document.getElementById("inputCable").value);
+    Q_in=parseFloat(document.getElementById("inputQin").value);
+    let margenAngular = parseFloat(document.getElementById("inputAngVar").value);
 
-  A=Math.PI*Math.pow(diametro/2,2);
-
-  ang_min=-margenAngular;
-  ang_max=margenAngular;
+    A=Math.PI*Math.pow(diametro/2,2);
+    ang_min=-margenAngular;
+    ang_max=margenAngular;
+    resetSimulacion();
+  }
   tiempoInicioPert=tiempo;
 }
 
