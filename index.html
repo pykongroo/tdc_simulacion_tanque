@@ -21,8 +21,6 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
   <canvas id="tanqueCanvas" width="200" height="400"></canvas>
   <div class="panel">
     <h3>Parámetros variables del Sistema</h3>
-    <label>Diámetro del tanque (cm):</label>
-    <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
     <label>Altura deseada (cm):</label>
     <input type="number" id="inputRef" value="89.47" min="0" max="89.47"><span class="def">(89.47)</span><br><br>
     <label>Amplitud perturbación (L/s):</label>
@@ -34,6 +32,8 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <h3>Parámetros no variables del sistema</h3>
     <label>Altura total del tanque (cm):</label>
     <input type="number" id="inputAltura" value="94.74" step="1"><span class="def">(94.74)</span><br><br>
+    <label>Diámetro del tanque (cm):</label>
+    <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
     <label>Caudal bomba (L/min):</label>
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
     <label>Histeresis (cm):</label>
@@ -151,10 +151,10 @@ const chartErr=new Chart(document.getElementById("chartErr").getContext("2d"),{
 });
 const chartNivel=new Chart(document.getElementById("chartNivel").getContext("2d"),{
   type:'line', data:{labels:labels,datasets:[
-    {label:"Nivel (%)",data:nivelData,borderColor:"green",borderWidth:2,fill:false,pointRadius:0},
-    {label:"Umbral ON/OFF (%)",data:[],borderColor:"red",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}
+    {label:"Nivel (cm)",data:nivelData,borderColor:"green",borderWidth:2,fill:false,pointRadius:0},
+    {label:"Altura objetivo (cm)",data:[],borderColor:"red",borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}
   ]},
-  options:{animation:false,scales:{y:{beginAtZero:true,max:100,title:{display:true,text:"%"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+  options:{animation:false,scales:{y:{beginAtZero:true,max:100,title:{display:true,text:"Nivel (cm)"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 
 // ------------------------
@@ -163,7 +163,7 @@ function actualizarGraficos(){
   chartPert.data.datasets[0].data=pertData;
   chartErr.data.datasets[0].data=errData;
   chartNivel.data.datasets[0].data=nivelData;
-  chartNivel.data.datasets[1].data=Array(nivelData.length).fill(ang_min);
+  chartNivel.data.datasets[1].data=Array(nivelData.length).fill(referencia);
 
   // Ajuste escalas dinámicas
   let maxPert=Math.max(...pertData,1)*1.2;
@@ -192,7 +192,7 @@ function dibujarTanque(){
   ctxTanque.strokeStyle="red"; ctxTanque.lineWidth=2;
   ctxTanque.beginPath();
   ctxTanque.moveTo(50,380-umbralPx); ctxTanque.lineTo(150,380-umbralPx); ctxTanque.stroke();
-  ctxTanque.fillStyle="red"; ctxTanque.font="14px Arial"; ctxTanque.fillText("Umbral/Ref",160,380-umbralPx+5);
+  ctxTanque.fillStyle="red"; ctxTanque.font="14px Arial"; ctxTanque.fillText("Ref",160,380-umbralPx+5);
 
   ctxTanque.fillStyle=bomba?"limegreen":"gray";
   ctxTanque.beginPath(); ctxTanque.arc(100,410,10,0,2*Math.PI); ctxTanque.fill();
@@ -212,7 +212,6 @@ function simular(){
   let angActual = medirNivel();
   let error = puntoSuma(obtenerReferencia(), angActual);
 
-  let nivelPorc = nivel / referencia * 100;
   bomba = controladorONOFF(error);
 
   let Q_bomba = actuarBomba(bomba);
@@ -221,9 +220,9 @@ function simular(){
 
   labels.push(tiempo.toFixed(1));
   refData.push(obtenerReferencia());
-  pertData.push(Q_pert*1000); // L/s en gráfico
+  pertData.push(Q_pert/1000); // L/s en gráfico
   errData.push(error);
-  nivelData.push(nivelPorc);
+  nivelData.push(nivel);
 
   actualizarGraficos();
   dibujarTanque();
