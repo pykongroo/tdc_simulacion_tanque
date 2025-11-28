@@ -36,10 +36,6 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputDiam" value="110" step="1"><span class="def">(110)</span><br><br>
     <label>Caudal bomba (L/min):</label>
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
-    <label>Histeresis (cm):</label>
-    <input type="number" id="inputHisteresis" value="5" step="1"><span class="def">(5)</span><br><br>
-    <label>Constante sensor (°/cm):</label>
-    <input type="number" id="inputK" value="0.18" step="0.01"><span class="def">(0.18)</span><br><br>
     <button onclick="aplicarParametros()">Aplicar Parámetros</button>
     <button onclick="togglePausa()">⏸ Pausar</button>
     <button onclick="resetSimulacion()" style="background:#d9534f;color:white;">🔄 Reset</button>
@@ -58,7 +54,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
 // ------------------------
 // VARIABLES
 let diametro=110, alturaTotal=94.74, referencia=89.47, amplitudPert=0, duracionPert=0;
-let factorTiempo=1, k_sensor=0.18, L_cable=5, histeresis=5, Q_in=92;
+let factorTiempo=1, L_cable=5, Q_in=92;
 let nivel=0, bomba=0, dt=1, tiempo=0, tiempoInicioPert=null;
 let A=Math.PI*Math.pow(diametro/2,2), ang_min=0, ang_max=0;
 let labels=[], refData=[], pertData=[], errData=[], nivelData=[], enPausa=false;
@@ -118,9 +114,6 @@ function aplicarParametros(){
   duracionPert=parseFloat(document.getElementById("inputDur").value);
   L_cable=parseFloat(document.getElementById("inputCable").value);
   Q_in=parseFloat(document.getElementById("inputQin").value);
-  histeresis=parseFloat(document.getElementById("inputHisteresis").value);
-  let k=parseFloat(document.getElementById("inputK").value);
-  if(!isNaN(k)) k_sensor=k;
 
   A=Math.PI*Math.pow(diametro/2,2);
   // let hisPorc=(histeresis/alturaTotal)*100;
