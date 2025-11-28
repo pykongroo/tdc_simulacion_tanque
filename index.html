@@ -25,13 +25,13 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputRef" value="89.47" min="0" max="89.47"><span class="def">(89.47)</span><br><br>
     <label>Largo del cable (cm):</label>
     <input type="number" id="inputCable" value="5" step="0.1"><span class="def">(5)</span><br><br>
-    <button onclick="aplicarParametros('variables')">Aplicar Variables</button>
+    <button onclick="aplicarParametros('variables')">Aplicar Parametros Variables</button>
     <h3>Parámetros de perturbación</h3>
     <label>Amplitud perturbación (L/s):</label>
     <input type="number" id="inputAmp" value="20" step="0.01"><span class="def">(20)</span><br><br>
     <label>Duración perturbación (s):</label>
     <input type="number" id="inputDur" value="10" step="1"><span class="def">(10)</span><br><br>
-    <button onclick="aplicarParametros('perturbacion')">Aplicar Variables</button>
+    <button onclick="aplicarParametros('perturbacion')">Aplicar Perturbación</button>
     <h3>Parámetros no variables del sistema (Resetean la simulación)</h3>
     <label>Altura total del tanque (cm):</label>
     <input type="number" id="inputAltura" value="94.74" step="1"><span class="def">(94.74)</span><br><br>
@@ -41,7 +41,7 @@ span.def { margin-left:5px;color:gray;font-size:0.9em; }
     <input type="number" id="inputQin" value="92" step="1"><span class="def">(92)</span><br><br>
     <label>Margen de Error Angular (°):</label>
     <input type="number" id="inputAngVar" value="10" step="1"><span class="def">(+/-10)</span><br><br>
-    <button onclick="aplicarParametros('noVariables')">Aplicar Variables</button><br><br>
+    <button onclick="aplicarParametros('noVariables')">Aplicar Parametros No Variables</button><br><br>
 
     <button onclick="aplicarParametros()">Aplicar Parámetros</button>
     <button onclick="togglePausa()">⏸ Pausar</button>
