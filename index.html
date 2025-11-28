@@ -71,7 +71,7 @@ function Q_Lps_a_cms(Q){ return Q*1000; }
 // ------------------------
 // BLOQUES DE CONTROL
 // function obtenerReferencia(){ return referencia*k_sensor; }
-function obtenerReferencia(){ return 0; }
+function obtenerReferenciaAngular(){ return 0; }
 // function medirNivel(){ return nivel*k_sensor; }
 function medirNivel(){
   let alturaFlotanteLow = referencia-L_cable;
@@ -138,8 +138,11 @@ function resetSimulacion(){ nivel=0; tiempo=0; tiempoInicioPert=null; labels.len
 // ------------------------
 // GRAFICOS
 const chartRef=new Chart(document.getElementById("chartRef").getContext("2d"),{
-  type:'line', data:{labels:labels,datasets:[{label:"Referencia (°)",data:refData,borderColor:"blue",borderWidth:2,fill:false,pointRadius:0}]},
-  options:{animation:false,scales:{y:{beginAtZero:true,max:alturaTotal*k_sensor*1.1,title:{display:true,text:"°"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
+  type:'line', data:{labels:labels,datasets:[
+    {label:"Referencia (cm)",data:refData,borderColor:"blue",borderWidth:2,fill:false,pointRadius:0},
+    {label:"Altura máxima (cm)",data:[],borderColor:"red",borderWidth:2,fill:false,pointRadius:0}
+  ]},
+  options:{animation:false,scales:{y:{beginAtZero:true,max:alturaTotal*1.1,title:{display:true,text:"cm"}},x:{title:{display:true,text:"Tiempo (s)"}}}}
 });
 const chartPert=new Chart(document.getElementById("chartPert").getContext("2d"),{
   type:'line', data:{labels:labels,datasets:[{label:"Perturbación (L/s)",data:pertData,borderColor:"orange",borderWidth:2,fill:false,pointRadius:0}]},
@@ -160,6 +163,7 @@ const chartNivel=new Chart(document.getElementById("chartNivel").getContext("2d"
 // ------------------------
 function actualizarGraficos(){
   chartRef.data.datasets[0].data=refData;
+  chartRef.data.datasets[1].data=Array(refData.length).fill(alturaTotal);
   chartPert.data.datasets[0].data=pertData;
   chartErr.data.datasets[0].data=errData;
   chartNivel.data.datasets[0].data=nivelData;
@@ -210,7 +214,7 @@ function simular(){
   tiempo += dt_eff;
 
   let angActual = medirNivel();
-  let error = puntoSuma(obtenerReferencia(), angActual);
+  let error = puntoSuma(obtenerReferenciaAngular(), angActual);
 
   bomba = controladorONOFF(error);
 
@@ -219,7 +223,7 @@ function simular(){
   actualizarNivel(Q_bomba, Q_pert, dt_eff);
 
   labels.push(tiempo.toFixed(1));
-  refData.push(obtenerReferencia());
+  refData.push(referencia);
   pertData.push(Q_pert/1000); // L/s en gráfico
   errData.push(error);
   nivelData.push(nivel);
